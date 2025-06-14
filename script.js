@@ -12,7 +12,7 @@ const economistCardsData = [
     { name: "John Stuart Mill", ovr: 63, category: "Classical", me: 70, gi: 55, ap: 70, se: 70, ea: 50, ps: 60, special_trait: "Utilitarian Balance: Can redistribute 10 points from one attribute to another on this card.", image_url: "https://i.ibb.co/jZq6YpM7/John-Stuart-Mill.png" },
     { name: "Jean-Baptiste Say", ovr: 55, category: "Classical", me: 90, gi: 25, ap: 65, se: 30, ea: 30, ps: 40, special_trait: "Say's Law: If played, ensures demand matches supply in next round for your team (no negative score from demand issues).", image_url: "https://i.ibb.co/1YtxD3pf/Jean-Baptiste-Say.png" },
     { name: "Karl Marx", ovr: 58, category: "Marxian", me: 10, gi: 90, ap: 75, se: 95, ea: 50, ps: 95, special_trait: "Class Struggle: If played, gain +15 SE if opponent has high ME (>70).", image_url: "https://i.ibb.co/8LmxC4vS/Karl-Marx.png" },
-    { name: "Alfred Marshall", ovr: 69, category: "Neoclassical", me: 75, gi: 40, ap: 85, se: 60, ea: 65, ps: 80, special_trait: "Supply & Demand: Can see the 'primary' attribute of the next economic problem.", image_url: "https://i.ibb.co/F4M4rvSh/Alfred-Marshall.png" },
+    { name: "Alfred Marshall", ovr: 69, category: "Neoclassical", me: 75, gi: 40, ap: 85, se: 60, ea: 65, ps: 80, special_trait: "  Supply & Demand: Can see the 'primary' attribute of the next economic problem.", image_url: "https://i.ibb.co/F4M4rvSh/Alfred-Marshall.png" },
     { name: "Léon Walras", ovr: 67, category: "Neoclassical", me: 80, gi: 30, ap: 90, se: 40, ea: 45, ps: 75, special_trait: "General Equilibrium: Gain +10 AP if playing a second Neoclassical card in your hand.", image_url: "https://i.ibb.co/jP2j7Fsb/L-on-Walras.png" },
     { name: "Carl Menger", ovr: 60, category: "Austrian", me: 85, gi: 30, ap: 80, se: 35, ea: 30, ps: 70, special_trait: "Marginal Utility: Can reroll one of your own attribute scores once per game (on this card).", image_url: "https://i.ibb.co/Txydmttn/Carl-Menger.png" },
     { name: "William Stanley Jevons", ovr: 59, category: "Neoclassical", me: 80, gi: 35, ap: 80, se: 30, ea: 50, ps: 70, special_trait: "Rational Consumer: +10 ME when an opponent plays a high GI card.", image_url: "https://i.ibb.co/PZypWnLB/William-Stanley-Jevons.png" },
@@ -176,6 +176,31 @@ const finalPlayerScore = document.getElementById('finalPlayerScore');
 const finalOpponentScore = document.getElementById('finalOpponentScore');
 const restartGameButton = document.getElementById('restartGameButton');
 
+// Custom Message Box Elements
+const messageBoxModal = document.getElementById('messageBoxModal');
+const messageBoxTitle = document.getElementById('messageBoxTitle');
+const messageBoxText = document.getElementById('messageBoxText');
+const messageBoxCloseButton = document.getElementById('messageBoxCloseButton');
+
+
+/**
+ * Shows a custom message box modal.
+ * @param {string} title - The title of the message box.
+ * @param {string} message - The message content.
+ */
+function showMessage(title, message) {
+    messageBoxTitle.textContent = title;
+    messageBoxText.textContent = message;
+    messageBoxModal.classList.remove('hidden');
+}
+
+/**
+ * Hides the custom message box modal.
+ */
+function hideMessage() {
+    messageBoxModal.classList.add('hidden');
+}
+
 
 /**
  * Renders a single economist card HTML element for display in hand or played area.
@@ -227,10 +252,15 @@ function createEconomistCardElement(cardData, isPlayerHandCard = false) {
  * @param {HTMLElement} cardElement - The HTML element of the selected card.
  */
 function selectCard(cardData, cardElement) {
-    if (!isGameActive) return; // Only allow selection if game is active
+    console.log('selectCard called for:', cardData.name);
+    if (!isGameActive) {
+        console.log('Game not active, cannot select card.');
+        return; // Only allow selection if game is active
+    }
 
     // Check if the card is already disabled (played)
     if (cardElement.classList.contains('disabled-card')) {
+        console.log('Card is disabled, cannot select.');
         return; // Cannot select a disabled card
     }
 
@@ -238,12 +268,14 @@ function selectCard(cardData, cardElement) {
     const previouslySelected = document.querySelector('.economist-card.selected');
     if (previouslySelected) {
         previouslySelected.classList.remove('selected');
+        console.log('Deselected previous card.');
     }
 
     // Select the new card
     cardElement.classList.add('selected');
     selectedEconomistCard = cardData; // Store the actual card data
     playCardButton.disabled = false; // Enable the play button
+    console.log('Card selected:', selectedEconomistCard.name, 'Play button enabled.');
 }
 
 /**
@@ -252,6 +284,7 @@ function selectCard(cardData, cardElement) {
  * @param {HTMLElement} targetElement - The element where the preview should be rendered.
  */
 function displayPlayedCardPreview(cardData, targetElement) {
+    console.log('displayPlayedCardPreview called for:', cardData ? cardData.name : 'null');
     if (!cardData) {
         targetElement.innerHTML = 'No card played yet.';
         return;
@@ -276,6 +309,7 @@ function displayPlayedCardPreview(cardData, targetElement) {
  * @returns {Array} A 5-card team.
  */
 function drawInitialTeam(allCards) {
+    console.log('drawInitialTeam called.');
     const team = [];
     const availableCards = [...allCards]; // Create a mutable copy
 
@@ -286,9 +320,10 @@ function drawInitialTeam(allCards) {
 
     for (let i = 0; i < 5; i++) {
         const randomIndex = Math.floor(Math.random() * availableCards.length);
-        const card = availableCards.splice(randomIndex, randomIndex + 1)[0]; // Remove and get the card
+        const card = availableCards.splice(randomIndex, 1)[0]; // Remove and get the card
         team.push(card);
     }
+    console.log('Initial team drawn:', team.map(c => c.name));
     return team;
 }
 
@@ -296,14 +331,17 @@ function drawInitialTeam(allCards) {
  * Renders the player's current hand to the UI.
  */
 function renderPlayerHand() {
+    console.log('renderPlayerHand called.');
     playerHandDiv.innerHTML = ''; // Clear previous hand
     selectedEconomistCard = null; // Reset selected card
     playCardButton.disabled = true; // Disable play button until card is selected
-    playerCardPreview.innerHTML = 'No card played yet.'; // Clear played card preview
-    opponentCardPreview.innerHTML = 'No card played yet.'; // Clear played card preview
+    playerCardPreview.innerHTML = '<p class="text-gray-500">Player Card:</p><div class="min-h-[100px]">No card played yet.</div>'; // Clear played card preview
+    opponentCardPreview.innerHTML = '<p class="text-gray-500">Opponent Card:</p><div class="min-h-[100px]">No card played yet.</div>'; // Clear played card preview
+
 
     if (playerHand.length === 0) {
         playerHandDiv.innerHTML = '<p class="col-span-full text-gray-500 text-center">Your hand is empty. Game Over or Restart.</p>';
+        console.log('Player hand is empty.');
         return;
     }
 
@@ -311,6 +349,7 @@ function renderPlayerHand() {
         const cardElement = createEconomistCardElement(card, true); // True for player hand cards
         playerHandDiv.appendChild(cardElement);
     });
+    console.log('Player hand rendered.');
 }
 
 /**
@@ -320,6 +359,7 @@ function renderPlayerHand() {
  * @returns {Object} The card selected by the AI.
  */
 function aiSelectCard(hand, problem) {
+    console.log('aiSelectCard called.');
     let bestCard = null;
     let highestScore = -1;
     const attribute = problem.relevantAttribute.toLowerCase(); // e.g., "gi", "me"
@@ -332,6 +372,7 @@ function aiSelectCard(hand, problem) {
             bestCard = card;
         }
     }
+    console.log('AI selected:', bestCard ? bestCard.name : 'No card');
     return bestCard;
 }
 
@@ -395,9 +436,9 @@ function applySpecialTrait(card, problem, playerType, playerCard, opponentCard) 
             // This means it needs to modify how the *opponent's* trait is applied.
             // For simplicity in a direct comparison, we'll give Arrow a small direct boost if an opponent would benefit from a trait.
             // A more complex system would require a different trait application order or a mutable game state.
-            if (trait.includes("Impossibility Theorem") && playerType === 'player' && opponentCard && opponentCard.special_trait !== "No specific trait logic for") {
+            if (trait.includes("Impossibility Theorem") && playerType === 'player' && opponentCard && opponentCard.special_trait && opponentCard.special_trait !== "No specific trait logic for") {
                 // If opponent has *any* trait, Arrow gets a bonus
-                effectiveAttributeValue += 10; // Example: small boost for nullifying
+                effectiveAttributeValue += 10; // Example: arbitrary reduction
                 console.log(`${card.name}'s Impossibility Theorem: Opponent's trait potentially nullified.`);
             }
             break;
@@ -435,8 +476,9 @@ function applySpecialTrait(card, problem, playerType, playerCard, opponentCard) 
  * Handles the logic for playing a card and resolving the round.
  */
 async function playCard() {
+    console.log('playCard called.');
     if (!selectedEconomistCard) {
-        alert("Please select a card to play!");
+        showMessage("No Card Selected", "Please select a card to play!");
         return;
     }
     if (!isGameActive) {
@@ -456,6 +498,8 @@ async function playCard() {
     // Player's move
     const playerPlayedCard = selectedEconomistCard;
     displayPlayedCardPreview(playerPlayedCard, playerCardPreview);
+    console.log('Player played:', playerPlayedCard.name);
+
 
     // Remove played card from player's hand (important for subsequent rounds)
     playerHand = playerHand.filter(card => card.name !== playerPlayedCard.name);
@@ -466,9 +510,11 @@ async function playCard() {
     if (opponentPlayedCard) {
         displayPlayedCardPreview(opponentPlayedCard, opponentCardPreview);
         opponentHand = opponentHand.filter(card => card.name !== opponentPlayedCard.name); // Remove from AI hand
+        console.log('Opponent played:', opponentPlayedCard.name);
     } else {
         // This case should ideally not happen if hands are managed correctly and game ends when cards run out
         opponentCardPreview.innerHTML = 'Opponent ran out of cards!';
+        console.log('Opponent ran out of cards.');
     }
 
 
@@ -520,7 +566,7 @@ async function playCard() {
 
     // Show round result (can be an alert or a temporary message)
     await new Promise(resolve => setTimeout(() => {
-        alert(roundMessage); // Using alert for now for clear feedback
+        showMessage("Round Result", roundMessage); // Using custom message box
         resolve();
     }, 500)); // Short delay to see the cards
 
@@ -540,6 +586,7 @@ async function playCard() {
  * Checks if the game has ended based on chosen mode and conditions.
  */
 function checkGameOver() {
+    console.log('checkGameOver called. Current Round:', currentRound, 'Player Score:', playerScore, 'Opponent Score:', opponentScore);
     let gameOver = false;
     let winner = null;
     let message = "";
@@ -595,8 +642,10 @@ function checkGameOver() {
     }
 
     if (gameOver) {
+        console.log('Game Over detected. Winner:', winner, 'Message:', message);
         endGame(winner, message);
     } else {
+        console.log('Game not over. Continuing to next round.');
         // Re-enable player interaction for next round if game is active
         // This is done implicitly by renderPlayerHand and startRound
     }
@@ -609,6 +658,7 @@ function checkGameOver() {
  * @param {string} message - A message describing the game outcome.
  */
 function endGame(winner, message) {
+    console.log('endGame called.');
     isGameActive = false;
     gameOverModal.classList.remove('hidden');
     gameOverResult.textContent = `Game Over! ${winner === 'No one' ? "It's a Draw!" : winner === 'Player' ? "You Win!" : "You Lose!"}`;
@@ -623,13 +673,16 @@ function endGame(winner, message) {
  * Starts a new round of the game.
  */
 function startRound() {
+    console.log('startRound called.');
     // Check if the game should continue or if a game over condition has been met.
     if (!isGameActive) {
+        console.log('Game not active, returning from startRound.');
         return; // Game is not active, likely ended by checkGameOver
     }
 
     // Ensure players still have cards if not playing fixed rounds
     if (playerHand.length === 0 || opponentHand.length === 0) {
+        console.log('One or both players ran out of cards. Checking game over conditions.');
         checkGameOver(); // This will trigger endGame if necessary
         return;
     }
@@ -638,6 +691,8 @@ function startRound() {
     const randomIndex = Math.floor(Math.random() * economicProblems.length);
     currentEconomicProblem = economicProblems[randomIndex];
     economicProblemDisplay.textContent = currentEconomicProblem.description;
+    console.log(`New Economic Problem: ${currentEconomicProblem.description} (Relevant: ${currentEconomicProblem.relevantAttribute})`);
+
 
     // Reset UI for the new round
     playerCardPreview.innerHTML = '<p class="text-gray-500">Player Card:</p><div class="min-h-[100px]">No card played yet.</div>';
@@ -665,33 +720,40 @@ function startRound() {
  * Initializes the game, including modal setup.
  */
 function initializeGame() {
+    console.log('initializeGame called.');
     resetGame(); // Ensure a clean slate
     showGameSetupModal();
+    console.log('Game setup modal shown.');
 }
 
 /**
  * Handles the start game button click from the setup modal.
  */
 function setupGameParametersAndStart() {
+    console.log('setupGameParametersAndStart called.');
     gameMode = document.querySelector('input[name="gameMode"]:checked').value;
     if (gameMode === 'score') {
         targetScore = parseInt(targetScoreInput.value);
         if (isNaN(targetScore) || targetScore < 10) {
-            alert("Please enter a valid target score (minimum 10).");
+            showMessage("Invalid Input", "Please enter a valid target score (minimum 10).");
+            console.error("Invalid target score:", targetScoreInput.value);
             return;
         }
     } else { // rounds mode
         totalRounds = parseInt(totalRoundsInput.value);
         if (isNaN(totalRounds) || totalRounds < 1 || totalRounds > 30) {
-            alert("Please enter a valid number of rounds (1-30).");
+            showMessage("Invalid Input", "Please enter a valid number of rounds (1-30).");
+            console.error("Invalid total rounds:", totalRoundsInput.value);
             return;
         }
     }
 
     hideGameSetupModal();
+    console.log('Game setup modal hidden.');
     resetGame(); // Reset all game state again just in case
     dealInitialHands(); // Deal new hands for player and AI
     isGameActive = true;
+    console.log('Game active state set to true.');
     startRound(); // Start the first round
 }
 
@@ -700,15 +762,40 @@ function setupGameParametersAndStart() {
  */
 function showGameSetupModal() {
     gameSetupModal.classList.remove('hidden');
+    console.log('Removed hidden class from gameSetupModal.');
 }
 
 /**
  * Hides the game setup modal.
  */
 function hideGameSetupModal() {
+    messageBoxModal.classList.add('hidden'); // Ensure message box is hidden if open
     gameSetupModal.classList.add('hidden');
+    console.log('Added hidden class to gameSetupModal.');
 }
+
+
+// --- Event Listeners ---
+messageBoxCloseButton.addEventListener('click', hideMessage); // Event listener for the new message box
+
+gameModeRadios.forEach(radio => {
+    radio.addEventListener('change', (event) => {
+        if (event.target.value === 'score') {
+            scoreSettings.classList.remove('hidden');
+            roundsSettings.classList.add('hidden');
+        } else {
+            scoreSettings.classList.add('hidden');
+            roundsSettings.classList.remove('hidden');
+        }
+        console.log('Game mode changed to:', event.target.value);
+    });
+});
+
+startGameButton.addEventListener('click', setupGameParametersAndStart);
+restartGameButton.addEventListener('click', initializeGame); // Restart button initiates setup again
+playCardButton.addEventListener('click', playCard); // Main game loop trigger
 
 
 // Initialize the game when the window loads
 window.onload = initializeGame;
+console.log('Script loaded. window.onload set to initializeGame.');
